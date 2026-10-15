@@ -1,0 +1,186 @@
+{% extends 'robot_site/base.html' %}
+
+{% block title %}机器人管理 - 机器人管理系统{% endblock %}
+{% block page_title %}机器人管理{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-robot me-2"></i>机器人列表
+        </h6>
+        <div>
+            <a href="/admin/robot_site/robot/add/" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>添加机器人
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 状态筛选 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="btn-group" role="group">
+                    <a href="?" class="btn btn-outline-primary {% if not request.GET.status %}active{% endif %}">
+                        全部
+                    </a>
+                    <a href="?status=online" class="btn btn-outline-success">在线</a>
+                    <a href="?status=offline" class="btn btn-outline-secondary">离线</a>
+                    <a href="?status=maintenance" class="btn btn-outline-warning">维护中</a>
+                    <a href="?status=fault" class="btn btn-outline-danger">故障</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="搜索机器人..." id="searchInput">
+                    <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" width="100%" cellspacing="0" id="robotTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>机器人名称</th>
+                        <th>型号</th>
+                        <th>所属站点</th>
+                        <th>状态</th>
+                        <th>IP地址</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for robot in robots %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-robot me-1 text-primary"></i>
+                            <strong>{{ robot.name }}</strong>
+                        </td>
+                        <td>{{ robot.model_number }}</td>
+                        <td>
+                            <i class="fas fa-map-marker-alt me-1 text-info"></i>
+                            {{ robot.site.name }}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if robot.status == 'online' %}success{% elif robot.status == 'maintenance' %}warning{% elif robot.status == 'fault' %}danger{% else %}secondary{% endif %}">
+                                <i class="fas fa-circle me-1 status-{{ robot.status }}"></i>
+                                {{ robot.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <code>{{ robot.ip_address }}</code>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ robot.created_at|date:"Y-m-d H:i" }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" title="查看详情">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="/admin/robot_site/robot/{{ robot.id }}/change/" 
+                                   class="btn btn-outline-secondary" title="编辑">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-outline-info" title="参数监控">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="fas fa-robot fa-3x mb-3 d-block text-muted"></i>
+                            <h5>暂无机器人数据</h5>
+                            <p class="mb-3">还没有添加任何机器人，请先添加机器人数据</p>
+                            <a href="/admin/robot_site/robot/add/" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>添加第一个机器人
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 统计信息 -->
+        {% if robots %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <strong>{{ robots|length }}</strong><br>
+                            <small class="text-muted">显示数量</small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong class="text-success">
+                                {{ robots|length }}
+                            </strong><br>
+                            <small class="text-muted">总数量</small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong class="text-success">
+                                {{ robots|length }}
+                            </strong><br>
+                            <small class="text-muted">在线数量</small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>100%</strong><br>
+                            <small class="text-muted">在线率</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 搜索功能
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const robotTable = document.getElementById('robotTable');
+    
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = robotTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let row of rows) {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+    
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    // 状态筛选高亮
+    const currentStatus = new URLSearchParams(window.location.search).get('status');
+    if (currentStatus) {
+        const statusButtons = document.querySelectorAll('.btn-group .btn');
+        statusButtons.forEach(btn => {
+            if (btn.href && btn.href.includes(`status=${currentStatus}`)) {
+                btn.classList.add('active');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

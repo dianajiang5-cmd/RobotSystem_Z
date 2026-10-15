@@ -1,0 +1,282 @@
+{% extends 'robot_site/base.html' %}
+
+{% block title %}仪表盘 - 机器人管理系统{% endblock %}
+{% block page_title %}系统概览{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 统计卡片 - 总机器人数量 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            总机器人数量
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_robots }}
+                        </div>
+                        <div class="mt-2 text-success">
+                            <small>所有站点机器人总数</small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-robot fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 - 在线机器人 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="border-left-color: #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            在线机器人
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.online_robots }}
+                        </div>
+                        <div class="mt-2 text-success">
+                            <small>
+                                {% if stats.total_robots > 0 %}
+                                    在线率: {{ stats.online_robots|floatformat:0 }}/{{ stats.total_robots }}
+                                {% else %}
+                                    暂无数据
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-wifi fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 - 站点数量 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="border-left-color: #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            站点数量
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_sites }}
+                        </div>
+                        <div class="mt-2 text-info">
+                            <small>管理的站点总数</small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-map-marker-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 - 系统状态 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="border-left-color: #6c757d !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                            系统状态
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            正常运行
+                        </div>
+                        <div class="mt-2 text-success">
+                            <small><i class="fas fa-check-circle"></i> 所有服务正常</small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-server fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 机器人列表 -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-robot me-2"></i>机器人列表
+                </h6>
+                <a href="{% url 'robot_list' %}" class="btn btn-sm btn-outline-primary">
+                    查看全部 <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>机器人名称</th>
+                                <th>站点</th>
+                                <th>状态</th>
+                                <th>IP地址</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for robot in robots %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-robot me-1 text-primary"></i>
+                                    <strong>{{ robot.name }}</strong>
+                                </td>
+                                <td>{{ robot.site.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if robot.status == 'online' %}success{% elif robot.status == 'maintenance' %}warning{% elif robot.status == 'fault' %}danger{% else %}secondary{% endif %}">
+                                        <i class="fas fa-circle me-1 status-{{ robot.status }}"></i>
+                                        {{ robot.get_status_display }}
+                                    </span>
+                                </td>
+                                <td><code>{{ robot.ip_address }}</code></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-robot fa-2x mb-3 d-block"></i>
+                                    暂无机器人数据
+                                    <div class="mt-2">
+                                        <a href="/admin/robot_site/robot/add/" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus me-1"></i>添加第一个机器人
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近参数 -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>最近参数采集
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>机器人</th>
+                                <th>参数名称</th>
+                                <th>数值</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for param in recent_params %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-robot me-1 text-info"></i>
+                                    {{ param.robot.name }}
+                                </td>
+                                <td>{{ param.parameter_name }}</td>
+                                <td>
+                                    <strong class="text-primary">{{ param.parameter_value }}</strong> 
+                                    <span class="text-muted">{{ param.unit }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ param.collected_at|date:"H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-chart-line fa-2x mb-3 d-block"></i>
+                                    暂无参数数据
+                                    <div class="mt-2">
+                                        <small>参数数据将在系统运行后自动采集</small>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速操作 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt me-2"></i>快速操作
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/robot_site/robot/add/" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-plus me-2"></i><br>
+                            添加机器人
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/robot_site/site/add/" class="btn btn-outline-success btn-lg w-100">
+                            <i class="fas fa-map-marker-alt me-2"></i><br>
+                            添加站点
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/" class="btn btn-outline-info btn-lg w-100">
+                            <i class="fas fa-cog me-2"></i><br>
+                            系统管理
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'robot_list' %}" class="btn btn-outline-warning btn-lg w-100">
+                            <i class="fas fa-list me-2"></i><br>
+                            查看全部
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('机器人管理系统仪表盘加载完成');
+    
+    // 可以在这里添加更多的JavaScript功能
+    // 比如实时数据更新、图表初始化等
+    
+    // 示例：自动刷新数据（每30秒）
+    setInterval(function() {
+        // 这里可以添加数据刷新逻辑
+        console.log('数据自动刷新...');
+    }, 30000);
+});
+</script>
+{% endblock %}
